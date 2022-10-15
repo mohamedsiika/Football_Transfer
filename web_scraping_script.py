@@ -7,7 +7,6 @@ import random
 from bs4 import BeautifulSoup
 from datetime import datetime
 import datetime as dt
-from requests_ip_rotator import ApiGateway, EXTRA_REGIONS
 
 headers={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'}
 #url='https://www.transfermarkt.com/transfers/transfertagedetail/statistik/top/land_id_ab//land_id_zu//leihe//datum/2022-09-12/plus/1/galerie/0/page/1'
@@ -22,8 +21,8 @@ def page_num(soup):
         return 1
 
 def get_market_days():
-    market_start=datetime(2022,6,30).date()
-    today=datetime(2022,9,30).date()
+    market_start=datetime(2022,8,31).date()
+    today=datetime(2022,10,1).date()
     dif=(today-market_start).days
     days=[]
     for i in range(1,dif):
@@ -122,15 +121,15 @@ def get_money_information(table):
 if __name__=='__main__':
     days=get_market_days()
     names,nationalities,ages,positions,from_club,from_league,from_country,to_club,to_league,to_country,market_values,fees=np.array([],dtype='object'),np.array([],dtype='object'),np.array([],dtype='object'),np.array([],dtype='object'),np.array([],dtype='object'),np.array([],dtype='object'),np.array([],dtype='object'),np.array([],dtype='object'),np.array([],dtype='object'),np.array([],dtype='object'),np.array([],dtype='object'),np.array([],dtype='object')
-
+    dates=np.array([],dtype='object')
     for i in range(len(days)):
 
 
         url='https://www.transfermarkt.com/transfers/transfertagedetail/statistik/top/land_id_ab//land_id_zu//leihe//datum/'+days[i]+'/plus/1/galerie/0/page/1'
         r=requests.get(url,headers=headers)
         soup=BeautifulSoup(r.content,'html5lib')
-
         pages=page_num(soup)
+
         for j in range(pages):
 
             url = 'https://www.transfermarkt.com/transfers/transfertagedetail/statistik/top/land_id_ab//land_id_zu//leihe//datum/' + days[i] + '/plus/1/galerie/0/page/'+str(j+1)
@@ -148,15 +147,18 @@ if __name__=='__main__':
 
             money=get_money_information(table)
             market_values,fees=np.append(market_values,money[0]),np.append(fees,money[1])
+
             print('day',days[i],"page",j+1,'Done')
-        print(names.shape,ages.shape,positions.shape,nationalities.shape,from_club.shape,from_league.shape,from_country.shape,to_club.shape,to_league.shape,to_country.shape,market_values.shape,fees.shape)
+        dates = np.append(dates, [days[i] for z in range(names.shape[0] - dates.shape[0])])
+
+        print(dates.shape,names.shape,ages.shape,positions.shape,nationalities.shape,from_club.shape,from_league.shape,from_country.shape,to_club.shape,to_league.shape,to_country.shape,market_values.shape,fees.shape)
 
         print(days[i], "table Extracted successfully")
 
-    data={'name':names,'age':ages,'positions':positions,'nationality':nationalities,'from_club':from_club,'from_league':from_league,'from_country':from_country,'to_club':to_club,'to_league':to_league,'to_country':to_country,'market_value':market_values,'transfer_value':fees}
+    data={'day':dates,'name':names,'age':ages,'positions':positions,'nationality':nationalities,'from_club':from_club,'from_league':from_league,'from_country':from_country,'to_club':to_club,'to_league':to_league,'to_country':to_country,'market_value':market_values,'transfer_value':fees}
     df=pd.DataFrame(data)
     print(df)
-    df.to_excel("summer_transfer_window_2022.xlsx")
+    df.to_excel("summer_transfer_window_2022-9.xlsx")
 
 
 
